@@ -27,7 +27,70 @@ const initializePassport = () => {
             }
         }
     ));
+    
+    passport.use('register', new localStrategy(
+        { passReqToCallback: true, usernameField: 'email' },
+        async (req, username, password, done) => {
+            const { first_name, last_name, email, age } = req.body;
+            try {
+                const exist = await userModel.findOne({ email });
+                if (exist) {
+                    console.log("User already exists");
+                    done(null, false)
+                }
 
+                const user = {
+                    first_name,
+                    last_name,
+                    email,
+                    age,
+                    password: createHash(password),
+                    loggedBy: 'form'
+                }
+                const result = await userModel.create(user);
+                console.log(result);
+                return done(null, result)
+            } catch (error) {
+                return done("Error registering the user " + error);
+            }
+        }
+    ));
+    
+    // GITHUB
+    // passport.use('github', new GitHubStrategy(
+    //     { 
+    //         clientID: "Iv1.e4da1811720c0779",
+    //         clientSecret: "b23f11925db43edb0b5d58db11562d8066825752",
+    //         callbackUrl: "http://localhost:8080/api/sessions/githubcallback"
+    //     },
+    //     async (accessToken, refreshToken, profile, done) => {
+    //         console.log("Profile obtenido del usuario de GitHub: ");
+    //         console.log(profile);
+    //         try {
+    //             const user = await userModel.findOne({ email: profile._json.email });
+    //             console.log("Usuario encontrado para login:");
+    //             console.log(user);
+    //             if (!user) {
+    //                 console.warn("User doesn't exists with username: " + profile._json.email);
+    //                 let newUser = {
+    //                     first_name: profile._json.name,
+    //                     last_name: '',
+    //                     age: 28,
+    //                     email: profile._json.email,
+    //                     password: '',
+    //                     loggedBy: "GitHub"
+    //                 }
+    //                 const result = await userModel.create(newUser);
+    //                 return done(null, result)
+    //             } else {
+    //                 return done(null, user)
+    //             }
+
+    //         } catch (error) {
+    //             return done(error)
+    //         }
+    //     })
+    // );
 
     passport.serializeUser((user, done) => {
         done(null, user._id)
